@@ -12,26 +12,26 @@ pipeline {
         stage('Checkout Git repository') {
             steps {
                 echo '✅ Simulation: Pulling Git repository from GitHub'
-                echo 'git clone https://github.com/meriemraddadi/StudentDashboard.git'
+                sh 'git clone https://github.com/meriemraddadi/StudentDashboard.git'
             }
         }
 
         stage('Maven Build') {
             steps {
                 echo '✅ Simulation: Running mvn clean install'
-                echo 'mvn clean install'
+                sh 'mvn clean install'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 echo '✅ Simulation: Running SonarQube analysis'
-                echo """
+                sh """
                     mvn sonar:sonar \\
                     -Dsonar.projectKey=StudentDashboard \\
-                    -Dsonar.host.url=$SONAR_URL \\
-                    -Dsonar.login=$SONAR_LOGIN \\
-                    -Dsonar.password=$SONAR_PASSWORD
+                    -Dsonar.host.url=$localhost:9000 \\
+                    -Dsonar.login=$meriem \\
+                    -Dsonar.password=$20076218
                 """
             }
         }
@@ -39,22 +39,22 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo '✅ Simulation: Building Docker image'
-                echo "docker build -t $DOCKER_IMAGE ."
+                sh "docker build -t $DOCKER_IMAGE ."
             }
         }
 
         stage('Push Docker Image to DockerHub') {
             steps {
                 echo '✅ Simulation: Logging into DockerHub and pushing image'
-                echo "docker login -u meriemraddadi -p ******"
-                echo "docker push $DOCKER_IMAGE"
+                sh "docker login -u meriemraddadi -p ******"
+                sh "docker push $DOCKER_IMAGE"
             }
         }
 
         stage('Deploy with Docker Compose') {
             steps {
                 echo '✅ Simulation: Deploying with Docker Compose'
-                echo 'docker-compose up -d'
+                sh 'docker-compose up -d'
             }
         }
     }
