@@ -2,76 +2,77 @@ pipeline {
     agent any
 
     tools {
-        maven 'M2_HOME'
+        maven 'M2_HOME' // Assure-toi que M2_HOME est bien défini dans Jenkins
+    }
+
+    environment {
+        SONAR_URL = "http://192.168.33.10:9000"
+        SONAR_LOGIN = "admin"
+        SONAR_PASSWORD = "201jMt2340@@"
+        DOCKER_IMAGE = "meriemraddadi/studentdashboard:0.0.1"
     }
 
     stages {
         stage('Checkout Git repository') {
             steps {
                 echo 'Pulling Git repository'
-                git branch: 'master', url: 'https://github.com/meriemraddadi/studentDashboard.git'
+                git branch: 'master', url: 'https://github.com/meriemraddadi/StudentDashboard.git'
             }
         }
 
-        stage('Maven Clean Compile') {
+        stage('Maven Build') {
             steps {
-                echo 'Running Maven Clean and Compile'
-                sh 'mvn clean compile'
+                echo 'Running Maven Clean Install'
+                sh 'mvn clean install'
             }
         }
 
-        stage('Maven Install') {
+        stage('SonarQube Analysis') {
             steps {
-                echo 'Running Maven Install'
-                sh 'mvn install'
-            }
-        }
-
-        stage('Build Package') {
-            steps {
-                echo 'Running Maven Package'
-                sh 'mvn package'
-            }
-        }
-
-       stage('SonarQube Analysis') {
-           steps {
-               sh '''
-                   mvn sonar:sonar \
-                       -Dsonar.host.url=http://192.168.33.10:9000 \
-                       -Dsonar.login=admin \
-                       -Dsonar.password=201jMt2340@@ \
-    
-           }
-       }
-
-
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    echo 'Building Docker Image'
-                    def dockerImage = docker.build("meriemraddadi/kaddem:0.0.1")
+                withSonarQubeEnv('SonarQubeServer') { // Ce nom doit correspondre à la config dans Jenkins
+                    sh """
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=StudentDashboard \
+                        -Dsonar.host.url=$SONAR_URL \
+                        -Dsonar.login=$SONAR_LOGIN \
+                        -Dsonar.password=$SONAR_PASSWORD
+                    """
                 }
             }
         }
 
-        stage('Deploy Image to DockerHub') {
+        stage('Build Docker Image') {
             steps {
-                script {
-                    echo 'Logging into DockerHub and Pushing Image'
-                    sh 'docker login -u meriemraddadi -p 20076812'
-                    sh 'docker push meriemraddadi/StudentDashboard:0.0.1'
+                echo 'Building Docker Image'
+                sh 'docker build -t $DOCKER_IMAGE .'
+            }
+        }
+
+        stage('Push Docker Image to DockerHub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push $DOCKER_IMAGE
+                    '''
                 }
             }
         }
 
         stage('Deploy with Docker Compose') {
             steps {
-                script {
-                    echo 'Deploying with Docker Compose'
-                    sh 'docker-compose up -d'
-                }
+                echo 'Deploying with Docker Compose'
+                sh 'docker-compose up -d'
             }
         }
+    }
+
+    post {
+        success {
+            echo '🎉 Pipeline exécuté avec succès !'
+        }
+        failure {
+            echo '❌ Le pipeline a échoué.'
+        }
+    }
 }
