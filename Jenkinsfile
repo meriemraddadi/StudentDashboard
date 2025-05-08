@@ -5,12 +5,6 @@ pipeline {
         maven 'M2_HOME' // Assure-toi que M2_HOME est bien défini dans Jenkins
     }
 
-    environment {
-        SONAR_URL = "http://192.168.33.10:9000"
-        SONAR_LOGIN = "admin"
-        SONAR_PASSWORD = "201jMt2340@@"
-        DOCKER_IMAGE = "meriemraddadi/studentdashboard:0.0.1"
-    }
 
     stages {
         stage('Checkout Git repository') {
