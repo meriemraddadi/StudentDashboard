@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         SONAR_URL = 'http://localhost:9000'
-        SONAR_LOGIN = 'admin'
-        SONAR_PASSWORD = 'fake-password'
+        SONAR_LOGIN = 'zeineb'
+        SONAR_PASSWORD = '20076812'
         DOCKER_IMAGE = 'meriemraddadi/studentdashboard:0.0.1'
     }
 
